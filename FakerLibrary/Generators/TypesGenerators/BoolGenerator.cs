@@ -1,4 +1,5 @@
 ﻿using System;
+using Plugins;
 
 namespace FakerLibrary.Generators.TypesGenerators
 {

@@ -1,5 +1,4 @@
 ﻿using System;
-using FakerLibrary.Generators;
 
 namespace Plugins
 {
