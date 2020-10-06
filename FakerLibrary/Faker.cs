@@ -11,6 +11,12 @@ namespace FakerLibrary
     {
 
         private Dictionary<Type, IGenerator> generators;
+
+        public Faker()
+        {
+            this.generators = LoadGenerators();
+        }
+
         public T Create<T>() 
         {
             return (T)Create(typeof(T));
@@ -20,7 +26,7 @@ namespace FakerLibrary
         {
             if(t.IsPrimitive)
             {
-                return generators[t].GetType().InvokeMember("", BindingFlags.InvokeMethod | BindingFlags.Public | BindingFlags.Instance, null, generators[t], null);
+                return generators[t].GetType().InvokeMember("Generate", BindingFlags.InvokeMethod | BindingFlags.Public | BindingFlags.Instance, null, generators[t], null);
             }
             else if(t.IsClass)
             {
@@ -60,7 +66,16 @@ namespace FakerLibrary
         }
         private object CreateStructure(Type type)
         {
-           
+            ConstructorInfo[] currentConstructors = type.GetConstructors();
+            object createdStructure = default;
+            if ((currentConstructors.Length == 0) && (type.IsValueType))
+            {
+                createdStructure = Activator.CreateInstance(type);
+                return createdStructure;
+            }
+            //тоже самое что и при создании объектов
+            return createdStructure;
+
         }
 
         private object[] GenerateConstructorsParams(ConstructorInfo cInfo)
@@ -75,6 +90,7 @@ namespace FakerLibrary
 
 
             }
+            return generatedParams;
         }
 
         private void GenerateFieldsAndProperties(object createdObject)
