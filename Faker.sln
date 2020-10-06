@@ -3,11 +3,17 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.30413.136
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Faker", "Faker\Faker.csproj", "{3E2B4D11-8F57-468B-A9A6-56F14E9DC36D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Faker", "Faker\Faker.csproj", "{3E2B4D11-8F57-468B-A9A6-56F14E9DC36D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FakerLibrary", "FakerLibrary\FakerLibrary.csproj", "{22F060A7-C08C-46A1-BCDB-9A6473A89AB4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FakerLibrary", "FakerLibrary\FakerLibrary.csproj", "{22F060A7-C08C-46A1-BCDB-9A6473A89AB4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FakerUnitTests", "FakerUnitTests\FakerUnitTests.csproj", "{2E2724AB-7CA9-4712-8E9C-F82A70FA215C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FakerUnitTests", "FakerUnitTests\FakerUnitTests.csproj", "{2E2724AB-7CA9-4712-8E9C-F82A70FA215C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Plugins", "Plugins\Plugins.csproj", "{669A18A0-1389-4043-8B53-FB84E189067A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IntegerGenerator", "IntegerGenerator\IntegerGenerator.csproj", "{41DCD4BC-41C2-424E-A9B0-00B9812155D8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CharGenerator", "CharGenerator\CharGenerator.csproj", "{B12AE971-FFF9-4A44-9729-D86481260E26}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -27,6 +33,18 @@ Global
 		{2E2724AB-7CA9-4712-8E9C-F82A70FA215C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2E2724AB-7CA9-4712-8E9C-F82A70FA215C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2E2724AB-7CA9-4712-8E9C-F82A70FA215C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{669A18A0-1389-4043-8B53-FB84E189067A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{669A18A0-1389-4043-8B53-FB84E189067A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{669A18A0-1389-4043-8B53-FB84E189067A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{669A18A0-1389-4043-8B53-FB84E189067A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{41DCD4BC-41C2-424E-A9B0-00B9812155D8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{41DCD4BC-41C2-424E-A9B0-00B9812155D8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{41DCD4BC-41C2-424E-A9B0-00B9812155D8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{41DCD4BC-41C2-424E-A9B0-00B9812155D8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B12AE971-FFF9-4A44-9729-D86481260E26}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B12AE971-FFF9-4A44-9729-D86481260E26}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B12AE971-FFF9-4A44-9729-D86481260E26}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B12AE971-FFF9-4A44-9729-D86481260E26}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -4,7 +4,9 @@ using System.Text;
 
 namespace FakerLibrary.Generators
 {
-    class Generator
+    public abstract class Generator<T>
     {
+        public abstract T Generate();
+
     }
 }

@@ -1,4 +1,7 @@
-﻿using System;
+﻿using FakerLibrary.Generators;
+using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 
@@ -7,6 +10,7 @@ namespace FakerLibrary
     public class Faker
     {
 
+        private Dictionary<Type, IGenerator> generators;
         public T Create<T>() 
         {
             return (T)Create(typeof(T));
@@ -16,7 +20,7 @@ namespace FakerLibrary
         {
             if(t.IsPrimitive)
             {
-                return CreatePrimitive(t);
+                return generators[t].GetType().InvokeMember("", BindingFlags.InvokeMethod | BindingFlags.Public | BindingFlags.Instance, null, generators[t], null);
             }
             else if(t.IsClass)
             {
@@ -28,11 +32,6 @@ namespace FakerLibrary
                 return CreateStructure(t);
             }
             throw new Exception("Cant create new object");
-        }
-
-        private object CreatePrimitive(Type type)
-        {
-
         }
 
         private object CreateClassObject(Type type)
@@ -71,6 +70,9 @@ namespace FakerLibrary
 
             for(int i=0; i < generatedParams.Length; i++)
             {
+                Type fieldType = paramsInfo[i].ParameterType;
+                object newValue = default;
+
 
             }
         }
@@ -78,6 +80,31 @@ namespace FakerLibrary
         private void GenerateFieldsAndProperties(object createdObject)
         {
 
+        }
+
+        private Dictionary<Type,IGenerator> LoadGenerators()
+        {
+            Dictionary<Type, IGenerator> loadedGenerators = new Dictionary<Type, IGenerator>();
+            string pluginsPath = Directory.GetCurrentDirectory() + @"";
+
+            foreach(string name in Directory.GetFiles(pluginsPath,"*.dll"))
+            {
+                Assembly asm = Assembly.LoadFrom(name);
+                foreach(Type t in asm.GetTypes())
+                {
+                    //проверка на то что существуют такие генераторы
+                    var currentGenerator = Activator.CreateInstance(t);
+                    loadedGenerators.Add(t.BaseType.GetGenericArguments()[0], (IGenerator)currentGenerator);
+                }
+            }
+
+            foreach(Type t in Assembly.GetExecutingAssembly().GetTypes())
+            {
+                //if проверка на то, что есть генератор такого типа
+                //если да - добавляем его в словарь генераторов
+            }
+
+            return loadedGenerators;
         }
 
     }
