@@ -1,60 +1,48 @@
 ﻿using System;
+using System.Collections.Generic;
 using FakerLibrary;
 
 namespace Faker
 {
-    public struct testStrustWIthoutConstructor
+    class CollClass
     {
-        public short n;
-        public short B { set; get; }
-    }
+        public List<int> ints;
+        List<double> doubles;
+        List<char> chars;
+        public List<DateTime> times;
 
-    public struct testStructWithConstructor
-    {
-        public int x;
-        private int y;
-        public short z;
-        public char c;
-
-        public testStructWithConstructor(int num1, int num2, short num3, char c1)
+        public CollClass(List<double> doubles)
         {
-            x = num1;
-            y = num2;
-            z = num3;
-            c = c1;
+            this.doubles = doubles;
         }
     }
 
-    class DefClass
+    class SomeClass
     {
-        public int field;
-        public DateTime field2;
-        long field3;
-        short field4;
-        public bool field5;
-    }
-    struct StructWithOnePrivateConstr
-    {
-        int field1;
-        public int field2;
-        StructWithOnePrivateConstr(int field)
+        long field1;
+        short field2;
+
+        public SomeClass(long l, short sh)
         {
-            field1 = field;
-            field2 = 1;
+            field1 = l;
+            field2 = sh;
         }
     }
-    class ClassWithPrivateConstr
-    {
-        public int field;
-        public DateTime field2;
-        long field3;
-        short field4;
-        public bool field5;
 
-        ClassWithPrivateConstr(long l, short sh)
+
+    class NestedCLass
+    {
+        public int a;
+        public SomeClass sClass;
+
+        NestedCLass(SomeClass sc)
         {
-            this.field3 = l;
-            this.field4 = sh;
+            this.sClass = sc;
+        }
+
+        public NestedCLass()
+        {
+
         }
     }
 
@@ -63,8 +51,11 @@ namespace Faker
         static void Main(string[] args)
         {
             FakerLibrary.Faker faker = new FakerLibrary.Faker();
-            var actual = faker.Create<ClassWithPrivateConstr>();
-            ClassWithPrivateConstr expected = null;
+            //var actual = faker.Create<CollClass>();
+            //var notExpected = new CollClass(new List<double>());
+
+            var actual = faker.Create<NestedCLass>();
+            var notExpected = new NestedCLass();
 
         }
     }

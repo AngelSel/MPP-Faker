@@ -1,6 +1,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using FakerLibrary;
 using System;
+using System.Collections.Generic;
 
 namespace FakerUnitTests
 {
@@ -131,6 +132,39 @@ namespace FakerUnitTests
             }
         }
 
+        class MultCtorClass
+        {
+            public int i;
+            public DateTime t;
+            long l;
+            public char c { get; }
+            public bool b { get; }
+            double d;
+
+            public MultCtorClass()
+            {
+
+            }
+            public MultCtorClass(long l, double d)
+            {
+                this.l = l;
+                this.d = d;
+            }
+        }
+
+        class CollClass
+        {
+            public List<int> ints;
+            List<double> doubles;
+            List<char> chars;
+            public List<DateTime> times;
+
+            public CollClass(List<double> doubles)
+            {
+                this.doubles = doubles;
+            }
+        }
+
         [TestMethod]
         public void TestWithDefStruct()
         {
@@ -138,16 +172,6 @@ namespace FakerUnitTests
             var created = faker.Create<StructWithOnePublicConstr>();
             var notExpected = new DefaultSTructure();
             Assert.AreNotEqual(notExpected.field1, created.field1);
-        }
-
-        [TestMethod]
-        public void TestStructWithPrivateConstr()
-        {
-            faker = new Faker();
-            var actual = faker.Create<StructWithOnePrivateConstr>();
-            var notExpected = new StructWithOnePrivateConstr();
-            Assert.AreNotEqual(notExpected.field2, actual.field2);
-
         }
 
         [TestMethod]
@@ -165,10 +189,9 @@ namespace FakerUnitTests
         {
             faker = new Faker();
             var actual = faker.Create<DefClass>();
-            var Expected = new DefClass();
-            Assert.AreEqual(Expected.field, actual.field);
-            Assert.AreEqual(Expected.field2, actual.field2);
-            Assert.AreEqual(Expected.field5, actual.field5);
+            var notExpected = new DefClass();
+            Assert.AreNotEqual(notExpected.field, actual.field);
+            Assert.AreNotEqual(notExpected.field2, actual.field2);
 
         }
 
@@ -182,7 +205,36 @@ namespace FakerUnitTests
 
         }
 
+        [TestMethod]
+        public void CreateNestedClasses()
+        {
+            faker = new Faker();
+            var actual = faker.Create<NestedCLass>();
+            var notExpected = new NestedCLass();
+            Assert.AreNotEqual(notExpected.a, actual.a);
+            Assert.AreNotEqual(notExpected.sClass,actual.sClass);
+        }
 
+        [TestMethod]
+        public void CreateMultCtorClass()
+        {
+            faker = new Faker();
+            var actual = faker.Create<MultCtorClass>();
+            var notExpected = new MultCtorClass();
+            Assert.AreEqual(notExpected.c, actual.c);
+            Assert.AreNotEqual(notExpected.i, actual.i);
+            Assert.AreNotEqual(notExpected.t, actual.t);
+        }
+
+        [TestMethod]
+        public void CreateListClass()
+        {
+            faker = new Faker();
+            var actual = faker.Create<CollClass>();
+            var notExpected = new CollClass(new List<double>());
+            CollectionAssert.AreNotEqual(notExpected.ints, actual.ints);
+            CollectionAssert.AreNotEqual(notExpected.times, actual.times);
+        }
 
 
 

@@ -1,5 +1,6 @@
 ﻿using Plugins;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -37,6 +38,11 @@ namespace FakerLibrary
             {
                 return CreateStructure(t);
             }
+            else if(t.IsGenericType)
+            {
+                Type[] temp = t.GetGenericArguments();
+                return generators[temp[0]].GetType().InvokeMember("GenerateList", BindingFlags.InvokeMethod | BindingFlags.Instance | BindingFlags.Public, null, generators[temp[0]], null);
+            }
             throw new Exception("Cant create new object");
         }
 
@@ -44,16 +50,13 @@ namespace FakerLibrary
         {
             ConstructorInfo[] currentConstructors = type.GetConstructors();
             object createdClassObject = default;
+
             if (currentConstructors.Length == 0)
-            {
-                // createdClassObject = Activator.CreateInstance(type);
-                // return createdClassObject;
                 return default;
-            }
+
             object[] constructorParams = null;
             ConstructorInfo chosenConstructor = null;
-
-            
+            bool isCreated = true;
             foreach (ConstructorInfo cInfo in currentConstructors.OrderByDescending(c => c.GetParameters().Length))
             {
                 constructorParams = GenerateConstructorsParams(cInfo);
@@ -65,11 +68,14 @@ namespace FakerLibrary
                 }
                 catch
                 {
+                    isCreated = false;
                     continue;
                 }
+                if (isCreated)
+                    break;
             }
 
-            GenerateFieldsAndProperties(createdClassObject);
+            GenerateFieldsAndProperties(createdClassObject,constructorParams,chosenConstructor);
             return createdClassObject;
         }
 
@@ -85,7 +91,7 @@ namespace FakerLibrary
 
             object[] constructorParams = null;
             ConstructorInfo chosenConstructor = null;
-
+            bool isCreated = true;
             foreach (ConstructorInfo cInfo in currentConstructors.OrderByDescending(c => c.GetParameters().Length))
             {
                 constructorParams = GenerateConstructorsParams(cInfo);
@@ -97,21 +103,27 @@ namespace FakerLibrary
                 }
                 catch
                 {
+                    isCreated = false;
                     continue;
                 }
+                if (isCreated)
+                    break;
             }
 
-            GenerateFieldsAndProperties(createdStructure);
+            GenerateFieldsAndProperties(createdStructure,constructorParams,chosenConstructor);
             return createdStructure;
         }
 
         private object[] GenerateConstructorsParams(ConstructorInfo cInfo)
         {
             ParameterInfo[] paramsInfo = cInfo.GetParameters();
+
             if (paramsInfo.Length == 0)
                 return null;
+
             List<object> generatedParams = new List<object>();
             object newValue = default;
+
             foreach(ParameterInfo param in paramsInfo)
             {
                 if (generators.TryGetValue(param.ParameterType, out IGenerator g))
@@ -119,12 +131,21 @@ namespace FakerLibrary
                     Type fieldType = param.ParameterType;
                     newValue = generators[fieldType].GetType().InvokeMember("Generate", BindingFlags.InvokeMethod | BindingFlags.Instance | BindingFlags.Public, null, generators[fieldType], null);
                 }
+                else if(param.ParameterType.IsGenericType)
+                {
+                    Type[] temp = param.ParameterType.GetGenericArguments();
+                    newValue = generators[temp[0]].GetType().InvokeMember("GenerateList", BindingFlags.InvokeMethod | BindingFlags.Instance | BindingFlags.Public, null, generators[temp[0]], null);
+                }
+                else if(!(param.ParameterType.IsPrimitive || param.ParameterType == typeof(DateTime)))
+                {
+                    newValue = this.GetType().GetMethod("Create").MakeGenericMethod(param.ParameterType).Invoke(this, null);
+                }
                 generatedParams.Add(newValue);
             }
 
             return generatedParams.ToArray();
         }
-
+        /*
         private void GenerateFieldsAndProperties(object createdObject)
         {
             Type type = createdObject.GetType();
@@ -141,6 +162,60 @@ namespace FakerLibrary
                     if (property.CanRead && property.GetValue(createdObject) != null)
                         continue;
                     property.SetValue(createdObject, Create(property.PropertyType));
+                }
+            }
+        }
+        */
+        private void GenerateFieldsAndProperties(object createdObject, object[] ctorParams, ConstructorInfo cInfo)
+        {
+            ParameterInfo[] pInfo = cInfo?.GetParameters();
+            var fields = createdObject.GetType().GetFields(BindingFlags.Instance | BindingFlags.Public).Cast<MemberInfo>();
+            var properties = createdObject.GetType().GetProperties(BindingFlags.Instance | BindingFlags.Public).Cast<MemberInfo>();
+            var fieldsAndProperties = fields.Concat(properties);
+
+            foreach (MemberInfo m in fieldsAndProperties)
+            {
+                bool wasInitialized = false;
+
+                Type memberType = (m as FieldInfo)?.FieldType ?? (m as PropertyInfo)?.PropertyType;
+                object memberValue = (m as FieldInfo)?.GetValue(createdObject) ?? (m as PropertyInfo)?.GetValue(createdObject);
+
+                for (int i = 0; i < ctorParams?.Length; i++)
+                {
+                    object defaultValue = this.GetType().GetMethod("GetDefaultValue", BindingFlags.NonPublic | BindingFlags.Instance).MakeGenericMethod(memberType).Invoke(this, null);
+                    if ((pInfo != null && ctorParams[i] == memberValue && memberType == pInfo[i].ParameterType && m.Name == pInfo[i].Name) || defaultValue?.Equals(memberValue) == false)
+                    {
+                        wasInitialized = true;
+                        break;
+                    }
+                }
+                if (!wasInitialized)
+                {
+                    object newValue = default;
+
+                    if (memberType.IsPrimitive || memberType == typeof(DateTime))
+                    {
+                        newValue = generators[memberType].GetType().InvokeMember("Generate", BindingFlags.InvokeMethod | BindingFlags.Instance
+                                                                                | BindingFlags.Public, null, generators[memberType], null);
+                    }
+                    else if (!(memberType.IsGenericType))
+                    {
+                        newValue = this.GetType().GetMethod("Create").MakeGenericMethod(memberType).Invoke(this, null);
+                    }
+                    else if (memberType.IsGenericType)
+                    {
+                        Type[] tmp = memberType.GetGenericArguments();
+                        newValue = generators[tmp[0]].GetType().InvokeMember("GenerateList", BindingFlags.InvokeMethod | BindingFlags.Instance
+                                                                             | BindingFlags.Public, null, generators[tmp[0]], null);
+                    }
+                   
+
+
+                    (m as FieldInfo)?.SetValue(createdObject, newValue);
+                    if ((m as PropertyInfo)?.CanWrite == true)
+                    {
+                        (m as PropertyInfo).SetValue(createdObject, newValue);
+                    }
                 }
             }
         }
@@ -170,9 +245,6 @@ namespace FakerLibrary
                     loadedGenerators.Add(t.BaseType.GetGenericArguments()[0], (IGenerator)Activator.CreateInstance(t));
             }
 
-            //string pluginsPath = Directory.GetCurrentDirectory() + @"d:/Ангелина/5 сем/5 сем/СПП/Lab2-MPP/MPP-Faker/pl";
-          
-
             return loadedGenerators;
         }
 
@@ -186,6 +258,11 @@ namespace FakerLibrary
                 current = current.BaseType;
             }
             return false;
+        }
+
+        private object GetDefaultValue<T>()
+        {
+            return default(T);
         }
     }
 }
