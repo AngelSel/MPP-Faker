@@ -46,17 +46,37 @@ namespace Faker
         }
     }
 
+    class ClassA
+    {
+        public ClassB c { get; set; }
+    }
+    class ClassB
+    {
+        public ClassC c { get; set; }
+    }
+    class ClassC
+    {
+        public ClassA c { get; set; }
+    }
+
+
+    struct Struct1
+    {
+        public int field1;
+        public char field2;
+    }
+
     class Program
     {
         static void Main(string[] args)
         {
             FakerLibrary.Faker faker = new FakerLibrary.Faker();
-            //var actual = faker.Create<CollClass>();
-            //var notExpected = new CollClass(new List<double>());
 
-            var actual = faker.Create<NestedCLass>();
-            var notExpected = new NestedCLass();
-
+            var fakerObject1 = faker.Create<NestedCLass>();
+            var fakerObject2 = faker.Create<Struct1>();
+            var fakerObject3 = faker.Create<SomeClass>();
+            var fakerObject4 = faker.Create<CollClass>();
+            var exp1 = faker.Create<ClassA>();
         }
     }
 }

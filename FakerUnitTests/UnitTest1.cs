@@ -57,8 +57,6 @@ namespace FakerUnitTests
                 this.field3 = field3;
             }
         }
-
-
         class DefClass
         {
             public int field;
@@ -82,7 +80,6 @@ namespace FakerUnitTests
                 this.field4 = sh;
             }
         }
-
         class MultipleConstrClass
         {
             public int field;
@@ -114,7 +111,6 @@ namespace FakerUnitTests
                 field2 = sh;
             }
         }
-
 
         class NestedCLass
         {
@@ -164,6 +160,7 @@ namespace FakerUnitTests
                 this.doubles = doubles;
             }
         }
+
 
         [TestMethod]
         public void TestWithDefStruct()
@@ -235,11 +232,5 @@ namespace FakerUnitTests
             CollectionAssert.AreNotEqual(notExpected.ints, actual.ints);
             CollectionAssert.AreNotEqual(notExpected.times, actual.times);
         }
-
-
-
-
-
-
     }
 }

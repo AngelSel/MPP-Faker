@@ -12,6 +12,10 @@ namespace FakerLibrary
     {
 
         private Dictionary<Type, IGenerator> generators;
+        public int MaxCircularDependency { get; set; } = 0;
+        public int currentCircularDependency = 0;
+        public Stack<Type> constructionStack = new Stack<Type>();
+
 
         public Faker()
         {
@@ -25,7 +29,7 @@ namespace FakerLibrary
 
         private object Create(Type t) 
         {
-            if(t.IsPrimitive || t == typeof(DateTime))
+            if(t.IsPrimitive || t == typeof(DateTime) || t == typeof(string))
             {
                 return generators[t].GetType().InvokeMember("Generate", BindingFlags.InvokeMethod | BindingFlags.Public | BindingFlags.Instance, null, generators[t], null);
             }
@@ -51,8 +55,9 @@ namespace FakerLibrary
             ConstructorInfo[] currentConstructors = type.GetConstructors();
             object createdClassObject = default;
 
-            if (currentConstructors.Length == 0)
+            if (currentConstructors.Length == 0 || ((currentCircularDependency = constructionStack.Where(t => t.Equals(type)).Count()) > MaxCircularDependency))
                 return default;
+            constructionStack.Push(type);
 
             object[] constructorParams = null;
             ConstructorInfo chosenConstructor = null;
@@ -81,6 +86,7 @@ namespace FakerLibrary
 
         private object CreateStructure(Type type)
         {
+            constructionStack.Push(type);
             ConstructorInfo[] currentConstructors = type.GetConstructors();
             object createdStructure = default;
             if (currentConstructors.Length == 0)
@@ -136,7 +142,7 @@ namespace FakerLibrary
                     Type[] temp = param.ParameterType.GetGenericArguments();
                     newValue = generators[temp[0]].GetType().InvokeMember("GenerateList", BindingFlags.InvokeMethod | BindingFlags.Instance | BindingFlags.Public, null, generators[temp[0]], null);
                 }
-                else if(!(param.ParameterType.IsPrimitive || param.ParameterType == typeof(DateTime)))
+                else if(!(param.ParameterType.IsPrimitive || param.ParameterType == typeof(DateTime) || param.ParameterType == typeof(string)))
                 {
                     newValue = this.GetType().GetMethod("Create").MakeGenericMethod(param.ParameterType).Invoke(this, null);
                 }
@@ -145,27 +151,7 @@ namespace FakerLibrary
 
             return generatedParams.ToArray();
         }
-        /*
-        private void GenerateFieldsAndProperties(object createdObject)
-        {
-            Type type = createdObject.GetType();
-            FieldInfo[] fields = type.GetFields();
-            PropertyInfo[] properties = type.GetProperties();
-            foreach (FieldInfo field in fields)
-                if (field.GetValue(createdObject) == null)
-                    field.SetValue(createdObject, Create(field.FieldType));
 
-            foreach(PropertyInfo property in properties)
-            {
-                if(property.CanWrite)
-                {
-                    if (property.CanRead && property.GetValue(createdObject) != null)
-                        continue;
-                    property.SetValue(createdObject, Create(property.PropertyType));
-                }
-            }
-        }
-        */
         private void GenerateFieldsAndProperties(object createdObject, object[] ctorParams, ConstructorInfo cInfo)
         {
             ParameterInfo[] pInfo = cInfo?.GetParameters();
