@@ -3,11 +3,9 @@ using Plugins;
 
 namespace CharGenerator
 {
-    public class CharGen : PluginsGenerator<char>
+    public class CharGen : Generator<char>
     {
         private Random rand = new Random();
-
-        public override string PluginName => "Char symbol generator";
 
         public override char Generate()
         {

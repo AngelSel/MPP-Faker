@@ -3,11 +3,9 @@ using Plugins;
 
 namespace IntegerGenerator
 {
-    public class IntgGen : PluginsGenerator<int>
+    public class IntgGen : Generator<int>
     {
         private Random rand = new Random();
-
-        public override string PluginName => "Integer number generator";
 
         public override int Generate()
         {

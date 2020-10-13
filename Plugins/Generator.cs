@@ -4,24 +4,24 @@ using System.Collections.Generic;
 
 namespace Plugins
 {
-    public interface IGenerator
-    {
-    }
-
-    public abstract class Generator<T>:IGenerator
+    public abstract class Generator<T> : IGenerator
     {
         public abstract T Generate();
-
-        public List<T> GenerateList()
+        object IGenerator.Generate(GeneratorContext context)
         {
-            Random rand = new Random();
-            List<T> createdList = new List<T>();
-
-            for(int i =0;i< rand.Next();i++)
-                createdList.Add(Generate());
-
-            return createdList;
+            if (context.TargetType == typeof(List<T>))
+                return ListGenerator.GenerateList<T>(this);
+            else return Generate();
         }
 
+        bool IGenerator.CanGenerate(Type type)
+        {
+            if (type == typeof(T))
+                return true;
+            if (type == typeof(List<T>))
+                return true;
+            return false;
+        }
     }
+
 }

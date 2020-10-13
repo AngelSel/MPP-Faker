@@ -1,6 +1,5 @@
 ﻿using Plugins;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -10,8 +9,7 @@ namespace FakerLibrary
 {
     public class Faker
     {
-
-        private Dictionary<Type, IGenerator> generators;
+        private List<IGenerator> gens;
         public int MaxCircularDependency { get; set; } = 0;
         public int currentCircularDependency = 0;
         public Stack<Type> constructionStack = new Stack<Type>();
@@ -19,7 +17,7 @@ namespace FakerLibrary
 
         public Faker()
         {
-            this.generators = LoadGenerators();
+            this.gens = LoadGenerators();
         }
 
         public T Create<T>() 
@@ -27,140 +25,116 @@ namespace FakerLibrary
             return (T)Create(typeof(T));
         }
 
-        private object Create(Type t) 
+        private object Create(Type type) 
         {
-            if(t.IsPrimitive || t == typeof(DateTime) || t == typeof(string))
+            if(((currentCircularDependency = constructionStack.Where(t => t.Equals(type)).Count()) > MaxCircularDependency))
             {
-                return generators[t].GetType().InvokeMember("Generate", BindingFlags.InvokeMethod | BindingFlags.Public | BindingFlags.Instance, null, generators[t], null);
+                return GetDefaultValue(type);
             }
-            else if(t.IsClass)
-            {
-                return CreateClassObject(t);
-
-            }
-            else if(t.IsValueType)
-            {
-                return CreateStructure(t);
-            }
-            else if(t.IsGenericType)
-            {
-                Type[] temp = t.GetGenericArguments();
-                return generators[temp[0]].GetType().InvokeMember("GenerateList", BindingFlags.InvokeMethod | BindingFlags.Instance | BindingFlags.Public, null, generators[temp[0]], null);
-            }
-            throw new Exception("Cant create new object");
-        }
-
-        private object CreateClassObject(Type type)
-        {
-            ConstructorInfo[] currentConstructors = type.GetConstructors();
-            object createdClassObject = default;
-
-            if (currentConstructors.Length == 0 || ((currentCircularDependency = constructionStack.Where(t => t.Equals(type)).Count()) > MaxCircularDependency))
-                return default;
             constructionStack.Push(type);
 
-            object[] constructorParams = null;
-            ConstructorInfo chosenConstructor = null;
-            bool isCreated = true;
-            foreach (ConstructorInfo cInfo in currentConstructors.OrderByDescending(c => c.GetParameters().Length))
+            IGenerator currentGenerator = null;
+            foreach(IGenerator g in gens)
             {
-                constructorParams = GenerateConstructorsParams(cInfo);
-
-                try
+                if(g.CanGenerate(type))
                 {
-                    createdClassObject = cInfo.Invoke(constructorParams);
-                    chosenConstructor = cInfo;
-                }
-                catch
-                {
-                    isCreated = false;
-                    continue;
-                }
-                if (isCreated)
+                    currentGenerator = g;
                     break;
+                }
             }
 
-            GenerateFieldsAndProperties(createdClassObject,constructorParams,chosenConstructor);
-            return createdClassObject;
+            if (currentGenerator!=null)
+            {
+                constructionStack.Pop();
+                return currentGenerator.Generate(new GeneratorContext(type));
+            }
+
+            object createdObject = CreateObject(type);
+
+            if(createdObject == null)
+            {
+                constructionStack.Pop();
+                return GetDefaultValue(type);
+
+            }
+
+            constructionStack.Pop();
+            return createdObject;
         }
 
-        private object CreateStructure(Type type)
+        private static object GetDefaultValue(Type t)
         {
-            constructionStack.Push(type);
-            ConstructorInfo[] currentConstructors = type.GetConstructors();
-            object createdStructure = default;
-            if (currentConstructors.Length == 0)
-            {
-                createdStructure = Activator.CreateInstance(type);
-                return createdStructure;
-            }
-
-            object[] constructorParams = null;
-            ConstructorInfo chosenConstructor = null;
-            bool isCreated = true;
-            foreach (ConstructorInfo cInfo in currentConstructors.OrderByDescending(c => c.GetParameters().Length))
-            {
-                constructorParams = GenerateConstructorsParams(cInfo);
-
-                try
-                {
-                    createdStructure = cInfo.Invoke(constructorParams);
-                    chosenConstructor = cInfo;
-                }
-                catch
-                {
-                    isCreated = false;
-                    continue;
-                }
-                if (isCreated)
-                    break;
-            }
-
-            GenerateFieldsAndProperties(createdStructure,constructorParams,chosenConstructor);
-            return createdStructure;
-        }
-
-        private object[] GenerateConstructorsParams(ConstructorInfo cInfo)
-        {
-            ParameterInfo[] paramsInfo = cInfo.GetParameters();
-
-            if (paramsInfo.Length == 0)
+            if (t.IsValueType)
+                return Activator.CreateInstance(t);
+            else
                 return null;
-
-            List<object> generatedParams = new List<object>();
-            object newValue = default;
-
-            foreach(ParameterInfo param in paramsInfo)
-            {
-                if (generators.TryGetValue(param.ParameterType, out IGenerator g))
-                {
-                    Type fieldType = param.ParameterType;
-                    newValue = generators[fieldType].GetType().InvokeMember("Generate", BindingFlags.InvokeMethod | BindingFlags.Instance | BindingFlags.Public, null, generators[fieldType], null);
-                }
-                else if(param.ParameterType.IsGenericType)
-                {
-                    Type[] temp = param.ParameterType.GetGenericArguments();
-                    newValue = generators[temp[0]].GetType().InvokeMember("GenerateList", BindingFlags.InvokeMethod | BindingFlags.Instance | BindingFlags.Public, null, generators[temp[0]], null);
-                }
-                else if(!(param.ParameterType.IsPrimitive || param.ParameterType == typeof(DateTime) || param.ParameterType == typeof(string)))
-                {
-                    newValue = this.GetType().GetMethod("Create").MakeGenericMethod(param.ParameterType).Invoke(this, null);
-                }
-                generatedParams.Add(newValue);
-            }
-
-            return generatedParams.ToArray();
         }
 
-        private void GenerateFieldsAndProperties(object createdObject, object[] ctorParams, ConstructorInfo cInfo)
+        private object CreateObject(Type type)
         {
-            ParameterInfo[] pInfo = cInfo?.GetParameters();
+            ConstructorInfo[] currentConstructors = type.GetConstructors();
+            object createdObject = default;
+
+            if (currentConstructors.Length == 0 && type.IsClass)
+                return default;
+
+            ParameterInfo[] ctorParamInfos = null;
+            ConstructorInfo chosenConstructor = null;
+            bool isCreated = true;
+            foreach (ConstructorInfo cInfo in currentConstructors.OrderByDescending(c => c.GetParameters().Length))
+            {
+                ParameterInfo[] parametersInfo = cInfo.GetParameters();
+                object[] parameters = new object[parametersInfo.Length];
+                for (int i = 0; i < parameters.Length; i++)
+                    parameters[i] = Create(parametersInfo[i].ParameterType);
+
+                try
+                {
+                    createdObject = cInfo.Invoke(parameters);
+                    ctorParamInfos = parametersInfo;
+                }
+                catch
+                {
+                    isCreated = false;
+                    continue;
+                }
+                if (isCreated)
+                    break;
+            }
+
+            if(createdObject == null && type.IsValueType)
+            {
+                try
+                {
+                    return Activator.CreateInstance(type);
+                }
+
+                catch
+                {
+                    return null;
+                }
+
+            }
+            else if (createdObject == null)
+            {
+                return null;
+            }
+
+
+            GenerateFieldsAndProperties(createdObject, ctorParamInfos, chosenConstructor);
+            return createdObject;
+        }
+
+        private void GenerateFieldsAndProperties(object createdObject, ParameterInfo[] ctorParams, ConstructorInfo cInfo)
+        {
+            //ParameterInfo[] pInfo = cInfo?.GetParameters();
             var fields = createdObject.GetType().GetFields(BindingFlags.Instance | BindingFlags.Public).Cast<MemberInfo>();
             var properties = createdObject.GetType().GetProperties(BindingFlags.Instance | BindingFlags.Public).Cast<MemberInfo>();
             var fieldsAndProperties = fields.Concat(properties);
 
             foreach (MemberInfo m in fieldsAndProperties)
             {
+
                 bool wasInitialized = false;
 
                 Type memberType = (m as FieldInfo)?.FieldType ?? (m as PropertyInfo)?.PropertyType;
@@ -168,8 +142,8 @@ namespace FakerLibrary
 
                 for (int i = 0; i < ctorParams?.Length; i++)
                 {
-                    object defaultValue = this.GetType().GetMethod("GetDefaultValue", BindingFlags.NonPublic | BindingFlags.Instance).MakeGenericMethod(memberType).Invoke(this, null);
-                    if ((pInfo != null && ctorParams[i] == memberValue && memberType == pInfo[i].ParameterType && m.Name == pInfo[i].Name) || defaultValue?.Equals(memberValue) == false)
+                    object defaultValue = GetDefaultValue(memberType);
+                    if ((ctorParams != null && ctorParams[i] == memberValue && memberType == ctorParams[i].ParameterType && m.Name == ctorParams[i].Name) || defaultValue?.Equals(memberValue) == false)
                     {
                         wasInitialized = true;
                         break;
@@ -177,50 +151,42 @@ namespace FakerLibrary
                 }
                 if (!wasInitialized)
                 {
-                    object newValue = default;
 
-                    if (memberType.IsPrimitive || memberType == typeof(DateTime))
-                    {
-                        newValue = generators[memberType].GetType().InvokeMember("Generate", BindingFlags.InvokeMethod | BindingFlags.Instance
-                                                                                | BindingFlags.Public, null, generators[memberType], null);
-                    }
-                    else if (!(memberType.IsGenericType))
-                    {
-                        newValue = this.GetType().GetMethod("Create").MakeGenericMethod(memberType).Invoke(this, null);
-                    }
-                    else if (memberType.IsGenericType)
-                    {
-                        Type[] tmp = memberType.GetGenericArguments();
-                        newValue = generators[tmp[0]].GetType().InvokeMember("GenerateList", BindingFlags.InvokeMethod | BindingFlags.Instance
-                                                                             | BindingFlags.Public, null, generators[tmp[0]], null);
-                    }
-                   
-
-
-                    (m as FieldInfo)?.SetValue(createdObject, newValue);
+                    (m as FieldInfo)?.SetValue(createdObject, Create(((FieldInfo)m).FieldType));
                     if ((m as PropertyInfo)?.CanWrite == true)
-                    {
-                        (m as PropertyInfo).SetValue(createdObject, newValue);
-                    }
+                        ((PropertyInfo)m).SetValue(createdObject, Create(((PropertyInfo)m).PropertyType));
                 }
             }
+
         }
 
-        private Dictionary<Type,IGenerator> LoadGenerators()
+        private static bool IsDefaultValue(object obj, MemberInfo mi)
         {
-            Dictionary<Type, IGenerator> loadedGenerators = new Dictionary<Type, IGenerator>();
+            if ((mi as FieldInfo)?.GetValue(obj) == GetDefaultValue((mi as FieldInfo).FieldType))
+                return true;
+            else if ((mi as PropertyInfo)?.GetValue(obj) == GetDefaultValue((mi as PropertyInfo).PropertyType))
+                return true;
+            return false;
+        }
+
+
+        private List<IGenerator> LoadGenerators()
+        {
+            List<IGenerator> loadedGenerators = new List<IGenerator>();
 
             string pluginsPath = @"d:\Ангелина\5 сем\5 сем\СПП\Lab2-MPP\MPP-Faker\pl";
+            //string pluginsPath = Directory.GetCurrentDirectory() + @"\Plugins";
             string[] f = Directory.GetFiles(pluginsPath, "*.dll");
              foreach ( string name in Directory.GetFiles(pluginsPath, "*.dll"))
              {
                  Assembly asm = Assembly.LoadFrom(name);
                  foreach (Type t in asm.GetTypes())
                  {
-                     if (IsRequiredType(t, typeof(PluginsGenerator<>)))
+
+                     if (IsRequiredType(t, typeof(Generator<>)))
                      {
                          var currentGenerator = Activator.CreateInstance(t);
-                         loadedGenerators.Add(t.BaseType.GetGenericArguments()[0], (IGenerator)currentGenerator);
+                         loadedGenerators.Add((IGenerator)currentGenerator);
                      }
                  }
             } 
@@ -228,7 +194,7 @@ namespace FakerLibrary
             foreach (Type t in Assembly.GetExecutingAssembly().GetTypes())
             {
                 if(IsRequiredType(t, typeof(Generator<>)))
-                    loadedGenerators.Add(t.BaseType.GetGenericArguments()[0], (IGenerator)Activator.CreateInstance(t));
+                    loadedGenerators.Add((IGenerator)Activator.CreateInstance(t));
             }
 
             return loadedGenerators;
@@ -246,9 +212,5 @@ namespace FakerLibrary
             return false;
         }
 
-        private object GetDefaultValue<T>()
-        {
-            return default(T);
-        }
     }
 }

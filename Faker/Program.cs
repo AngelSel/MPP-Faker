@@ -6,7 +6,7 @@ namespace Faker
 {
     class CollClass
     {
-        public List<int> ints;
+        public List<List<int>> ints;
         List<double> doubles;
         List<char> chars;
         public List<DateTime> times;
@@ -16,11 +16,16 @@ namespace Faker
             this.doubles = doubles;
         }
     }
+     class AllInOne
+    {
+
+    }
 
     class SomeClass
     {
         long field1;
         short field2;
+        public long f;
 
         public SomeClass(long l, short sh)
         {
@@ -72,7 +77,11 @@ namespace Faker
         {
             FakerLibrary.Faker faker = new FakerLibrary.Faker();
 
+            List<int> ints = faker.Create<List<int>>();
+            int i = faker.Create<int>();
+            List<SomeClass> someClasses = faker.Create<List<SomeClass>>();
             var fakerObject1 = faker.Create<NestedCLass>();
+
             var fakerObject2 = faker.Create<Struct1>();
             var fakerObject3 = faker.Create<SomeClass>();
             var fakerObject4 = faker.Create<CollClass>();
