@@ -16,10 +16,6 @@ namespace Faker
             this.doubles = doubles;
         }
     }
-     class AllInOne
-    {
-
-    }
 
     class SomeClass
     {
@@ -81,7 +77,6 @@ namespace Faker
             int i = faker.Create<int>();
             List<SomeClass> someClasses = faker.Create<List<SomeClass>>();
             var fakerObject1 = faker.Create<NestedCLass>();
-
             var fakerObject2 = faker.Create<Struct1>();
             var fakerObject3 = faker.Create<SomeClass>();
             var fakerObject4 = faker.Create<CollClass>();

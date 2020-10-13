@@ -1,14 +1,12 @@
 ﻿using System;
-using Plugins;
 
 namespace FakerLibrary.Generators.TypesGenerators
 {
     class LongGenerator : Generator<long>
     {
-        private Random rand = new Random();
-        public override long Generate()
+        public override long Generate(GeneratorContext context)
         {
-            return rand.Next() << 31 | rand.Next();
+            return context.Random.Next() << 31 | context.Random.Next();
         }
     }
 }

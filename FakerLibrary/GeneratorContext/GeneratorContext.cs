@@ -1,9 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 
-
-namespace Plugins
+namespace FakerLibrary
 {
     public class GeneratorContext
     {
@@ -13,9 +10,11 @@ namespace Plugins
 
         public Faker Faker { get; }
 
-        public GeneratorContext(Type targetType)
+        public GeneratorContext(Random random, Type targetType, Faker faker)
         {
+            Random = random;
             TargetType = targetType;
+            Faker = faker;
         }
     }
 }

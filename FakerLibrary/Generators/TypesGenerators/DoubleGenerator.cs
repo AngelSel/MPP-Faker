@@ -1,14 +1,12 @@
 ﻿using System;
-using Plugins;
 
 namespace FakerLibrary.Generators.TypesGenerators
 {
     class DoubleGenerator : Generator<double>
     {
-        private Random rand = new Random();
-        public override double Generate()
+        public override double Generate(GeneratorContext context)
         {
-            return rand.NextDouble();
+            return context.Random.NextDouble();
         }
     }
 }

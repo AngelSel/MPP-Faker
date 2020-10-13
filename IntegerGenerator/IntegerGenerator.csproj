@@ -5,7 +5,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Plugins\Plugins.csproj" />
+    <ProjectReference Include="..\FakerLibrary\FakerLibrary.csproj" />
   </ItemGroup>
 
 </Project>

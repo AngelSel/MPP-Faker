@@ -1,4 +1,4 @@
-﻿using Plugins;
+﻿using FakerLibrary.Generators.TypesGenerators;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -13,11 +13,22 @@ namespace FakerLibrary
         public int MaxCircularDependency { get; set; } = 0;
         public int currentCircularDependency = 0;
         public Stack<Type> constructionStack = new Stack<Type>();
+        private Random random;
 
 
         public Faker()
         {
             this.gens = LoadGenerators();
+            gens.Add(new ListGenerator());
+            gens.Add(new BoolGenerator());
+            gens.Add(new DataGenerator());
+            gens.Add(new DoubleGenerator());
+            gens.Add(new FloatGenerator());
+            gens.Add(new LongGenerator());
+            gens.Add(new ShortGenerator());
+            gens.Add(new StringGenerator());
+            random = new Random();
+
         }
 
         public T Create<T>() 
@@ -25,7 +36,7 @@ namespace FakerLibrary
             return (T)Create(typeof(T));
         }
 
-        private object Create(Type type) 
+        internal object Create(Type type) 
         {
             if(((currentCircularDependency = constructionStack.Where(t => t.Equals(type)).Count()) > MaxCircularDependency))
             {
@@ -46,7 +57,7 @@ namespace FakerLibrary
             if (currentGenerator!=null)
             {
                 constructionStack.Pop();
-                return currentGenerator.Generate(new GeneratorContext(type));
+                return currentGenerator.Generate(new GeneratorContext(random,type,this));
             }
 
             object createdObject = CreateObject(type);
@@ -190,12 +201,12 @@ namespace FakerLibrary
                      }
                  }
             } 
-
+/*
             foreach (Type t in Assembly.GetExecutingAssembly().GetTypes())
             {
                 if(IsRequiredType(t, typeof(Generator<>)))
                     loadedGenerators.Add((IGenerator)Activator.CreateInstance(t));
-            }
+            }*/
 
             return loadedGenerators;
         }

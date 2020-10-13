@@ -1,15 +1,13 @@
 ﻿using System;
-using Plugins;
+using FakerLibrary;
 
 namespace CharGenerator
 {
     public class CharGen : Generator<char>
     {
-        private Random rand = new Random();
-
-        public override char Generate()
+        public override char Generate(GeneratorContext context)
         {
-            return (char)rand.Next(255);
+            return (char)context.Random.Next(255);
         }
     }
 }

@@ -1,15 +1,12 @@
-﻿using System;
-using Plugins;
+﻿using FakerLibrary;
 
 namespace IntegerGenerator
 {
     public class IntgGen : Generator<int>
     {
-        private Random rand = new Random();
-
-        public override int Generate()
+        public override int Generate(GeneratorContext context)
         {
-            return rand.Next();
+            return context.Random.Next();
         }
     }
 }
