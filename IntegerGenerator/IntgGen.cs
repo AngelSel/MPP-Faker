@@ -6,7 +6,7 @@ namespace IntegerGenerator
     {
         public override int Generate(GeneratorContext context)
         {
-            return context.Random.Next();
+            return context.Random.Next(1,10000);
         }
     }
 }

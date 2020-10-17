@@ -168,7 +168,7 @@ namespace FakerUnitTests
             faker = new Faker();
             var created = faker.Create<StructWithOnePublicConstr>();
             var notExpected = new DefaultSTructure();
-            Assert.AreNotEqual(notExpected.field1, created.field1);
+            Assert.AreNotEqual(0, created.field1);
         }
 
         [TestMethod]

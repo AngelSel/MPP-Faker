@@ -64,15 +64,11 @@ namespace FakerLibrary
             }
 
             object createdObject = CreateObject(type);
+            constructionStack.Pop();
 
-            if(createdObject == null)
-            {
-                constructionStack.Pop();
+            if (createdObject == null)
                 return GetDefaultValue(type);
 
-            }
-
-            constructionStack.Pop();
             return createdObject;
         }
 
@@ -156,7 +152,7 @@ namespace FakerLibrary
                 for (int i = 0; i < ctorParams?.Length; i++)
                 {
                     object defaultValue = GetDefaultValue(memberType);
-                    if ((ctorParams != null && ctorParams[i] == memberValue && memberType == ctorParams[i].ParameterType && m.Name == ctorParams[i].Name) || defaultValue?.Equals(memberValue) == false)
+                    if ( defaultValue?.Equals(memberValue) == false)
                     {
                         wasInitialized = true;
                         break;
@@ -173,47 +169,21 @@ namespace FakerLibrary
 
         }
 
-        private static bool IsDefaultValue(object obj, MemberInfo mi)
-        {
-            if ((mi as FieldInfo)?.GetValue(obj) == GetDefaultValue((mi as FieldInfo).FieldType))
-                return true;
-            else if ((mi as PropertyInfo)?.GetValue(obj) == GetDefaultValue((mi as PropertyInfo).PropertyType))
-                return true;
-            return false;
-        }
-
-
         private void LoadGenerators()
         {
-
-            string pluginsPath = @"d:\Ангелина\5 сем\5 сем\СПП\Lab2-MPP\MPP-Faker\pl";
-            //string pluginsPath = Directory.GetCurrentDirectory() + @"\Plugins";
-            string[] f = Directory.GetFiles(pluginsPath, "*.dll");
+            string pluginsPath = Directory.GetCurrentDirectory() + @"\Plugins";
              foreach ( string name in Directory.GetFiles(pluginsPath, "*.dll"))
              {
                  Assembly asm = Assembly.LoadFrom(name);
                  foreach (Type t in asm.GetTypes())
                  {
-
-                     if (IsRequiredType(t, typeof(Generator<>)))
+                     if (t.GetInterface(nameof(IGenerator)) != null)
                      {
                          var currentGenerator = Activator.CreateInstance(t);
                          gens.Add((IGenerator)currentGenerator);
                      }
                  }
             } 
-        }
-
-        private bool IsRequiredType(Type current, Type isRequired)
-        {
-            while(current!=null && current!=typeof(object))
-            {
-                Type currType = current.IsGenericType ? current.GetGenericTypeDefinition() : current;
-                if (isRequired == currType)
-                    return true;
-                current = current.BaseType;
-            }
-            return false;
         }
 
     }
